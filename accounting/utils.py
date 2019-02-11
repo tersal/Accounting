@@ -78,7 +78,8 @@ class PolicyAccounting(object):
         :type  date_cursor: datetime.date
         :param amount: Amount of the payment to be registered. (default = 0)
         :type  amount: int
-        :returns: Payment -- Payment class created with the provided data.
+        :returns: Payment -- Payment class created with the provided data or None if it wasn't possible to make
+                             the payment.
         """
         if not date_cursor:
             date_cursor = datetime.now().date()
@@ -86,10 +87,13 @@ class PolicyAccounting(object):
 
         # If no name is provided for the insured, use the one stored in the policy
         if not contact_id:
-            try:
+            if not self.policy.named_insured:
+                # Return if no name was found in the parameter passed to the function
+                # or in the policy for the named_insured
+                print "Missing contact identifier for this payment, aborting payment."
+                return
+            else:
                 contact_id = self.policy.named_insured
-            except:
-                pass
 
         payment = Payment(self.policy.id,
                           contact_id,
@@ -243,6 +247,7 @@ def insert_data():
     policies = []
     p1 = Policy('Policy One', date(2015, 1, 1), 365)
     p1.billing_schedule = 'Annual'
+    p1.named_insured = john_doe_insured.id
     p1.agent = bob_smith.id
     policies.append(p1)
 

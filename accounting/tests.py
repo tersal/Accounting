@@ -195,3 +195,59 @@ class TestReturnAccountBalance(unittest.TestCase):
             self.payments.append(pa.make_payment(contact_id=self.policy.named_insured,
                                                  date_cursor=invoice.bill_date, amount=invoice.amount_due))
             self.assertEquals(pa.return_account_balance(date_cursor=invoice.bill_date), 0)
+
+
+class TestGeneralOperations(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.test_agent = Contact('Test Agent', 'Agent')
+        cls.test_insured = Contact('Test Insured', 'Named Insured')
+        db.session.add(cls.test_agent)
+        db.session.add(cls.test_insured)
+        db.session.commit()
+
+    @classmethod
+    def tearDownClass(cls):
+        db.session.delete(cls.test_insured)
+        db.session.delete(cls.test_agent)
+        db.session.commit()
+
+    def setUp(self):
+        self.payments = []
+        self.policies = []
+
+    def tearDown(self):
+        for policy in self.policies:
+            for invoice in policy.invoices:
+                db.session.delete(invoice)
+            db.session.delete(policy)
+        for payment in self.payments:
+            db.session.delete(payment)
+        db.session.commit()
+
+    def test_payment_contact_id_data(self):
+        # Create and store a policy without a named insured
+        policy = Policy('Test Policy', date(2015, 1, 1), 1200)
+        policy.named_insured = None
+        policy.agent = self.test_agent.id
+        self.policies.append(policy)
+        db.session.add(policy)
+        db.session.commit()
+
+        # Get the policy from the database
+        policy.billing_schedule = "Annual"
+        pa = PolicyAccounting(policy.id)
+        # Try to create a payment without a contact id specified, no payment should be registered
+        self.assertFalse(pa.make_payment(date_cursor=date(2015, 01, 01), amount=1200))
+        self.assertFalse(Payment.query.filter_by(policy_id=policy.id).all())
+        self.assertEquals(pa.return_account_balance(date_cursor=policy.effective_date), 1200)
+        # Try to create a payment with contact data specified
+        self.payments.append(pa.make_payment(date_cursor=date(2015, 01, 01),
+                                             amount=1200, contact_id=self.test_insured.id))
+        payments = Payment.query.filter_by(policy_id=policy.id)\
+                                .order_by(Payment.transaction_date).all()
+        self.assertEquals(len(payments), 1)
+        self.assertEquals(payments[0].contact_id, self.test_insured.id)
+        self.assertEquals(payments[0].amount_paid, 1200)
+        self.assertEquals(pa.return_account_balance(date_cursor=policy.effective_date), 0)
