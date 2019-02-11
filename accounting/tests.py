@@ -251,3 +251,21 @@ class TestGeneralOperations(unittest.TestCase):
         self.assertEquals(payments[0].contact_id, self.test_insured.id)
         self.assertEquals(payments[0].amount_paid, 1200)
         self.assertEquals(pa.return_account_balance(date_cursor=policy.effective_date), 0)
+
+    def test_evaluate_cancellation_pending(self):
+        policy = Policy('Test Policy', date(2015, 1, 1), 1200)
+        policy.named_insured = self.test_insured.id
+        policy.agent = self.test_agent.id
+        self.policies.append(policy)
+        db.session.add(policy)
+        db.session.commit()
+
+        # Get the policy from the database
+        policy.billing_schedule = "Annual"
+        pa = PolicyAccounting(policy.id)
+        # Evaluate status on eff date
+        self.assertFalse(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 1, 1)))
+        # Evaluate status on due date
+        self.assertFalse(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 2, 1)))
+        # Evaluate status after due date and before cancel date
+        self.assertTrue(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 2, 2)))

@@ -105,13 +105,38 @@ class PolicyAccounting(object):
         return payment
 
     def evaluate_cancellation_pending_due_to_non_pay(self, date_cursor=None):
-        """
+        """Evaluates the cancellation status of an invoice
+
          If this function returns true, an invoice
          on a policy has passed the due date without
          being paid in full. However, it has not necessarily
          made it to the cancel_date yet.
+
+         :param date_cursor: The date used to verify the current status of the policy. (default = None)
+         :type  date_cursor: datetime.date
+         :returns: True  -- An invoice has passed the due date but still not in the cancel_date
+                   False -- No invoice has passed the due date without payment.
         """
-        pass
+        if not date_cursor:
+            date_cursor = datetime.now().date()
+            print "No date provided, today date will be used: " + str(date_cursor)
+
+        # Get all the invoices that are beyond the due date but still not passed their cancel date
+        invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
+                                .filter(Invoice.due_date < date_cursor)\
+                                .filter(Invoice.cancel_date > date_cursor)\
+                                .order_by(Invoice.bill_date)\
+                                .all()
+
+        for invoice in invoices:
+            if not self.return_account_balance(date_cursor):
+                continue
+            else:
+                # An invoice pending of cancellation was found
+                return True
+        else:
+            # No invoice with a pending balance after the due date and before cancel date was found.
+            return False
 
     def evaluate_cancel(self, date_cursor=None):
         """Evaluates if a policy should be canceled.
