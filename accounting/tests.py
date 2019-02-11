@@ -54,6 +54,14 @@ class TestBillingSchedules(unittest.TestCase):
         self.assertEquals(len(self.policy.invoices), 1)
         self.assertEquals(self.policy.invoices[0].amount_due, self.policy.annual_premium)
 
+    def test_two_pay_billing_schedule(self):
+        self.policy.billing_schedule = 'Two-Pay'
+        self.assertFalse(self.policy.invoices)
+        pa = PolicyAccounting(self.policy.id)
+        self.assertEquals(len(self.policy.invoices), 2)
+        self.assertEquals(self.policy.invoices[0].amount_due, 600)
+        self.assertEquals(sum([invoice.amount_due for invoice in self.policy.invoices]), self.policy.annual_premium)
+
     def test_monthly_billing_schedule(self):
         self.policy.billing_schedule = 'Monthly'
         self.assertFalse(self.policy.invoices)
@@ -100,6 +108,39 @@ class TestReturnAccountBalance(unittest.TestCase):
         self.policy.billing_schedule = "Annual"
         pa = PolicyAccounting(self.policy.id)
         self.assertEquals(pa.return_account_balance(date_cursor=self.policy.effective_date), 1200)
+
+    def test_two_pay_on_eff_date(self):
+        self.policy.billing_schedule = "Two-Pay"
+        pa = PolicyAccounting(self.policy.id)
+        self.assertEquals(pa.return_account_balance(date_cursor=self.policy.effective_date), 600)
+
+    def test_two_pay_on_last_installment_bill_date(self):
+        self.policy.billing_schedule = "Two-Pay"
+        pa = PolicyAccounting(self.policy.id)
+        invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
+                                .order_by(Invoice.bill_date).all()
+        self.assertEquals(pa.return_account_balance(date_cursor=invoices[-1].bill_date), 1200)
+
+    def test_two_pay_account_balance(self):
+        self.policy.billing_schedule = "Two-Pay"
+        pa = PolicyAccounting(self.policy.id)
+        invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
+                                .order_by(Invoice.bill_date).all()
+        # An index is used instead of iterate directly on the elements to help with the balance calculation
+        for curr_invoice in range(len(invoices)):
+            self.assertEquals(pa.return_account_balance(date_cursor=invoices[curr_invoice].bill_date),
+                              (curr_invoice + 1) * invoices[curr_invoice].amount_due)
+
+    def test_two_pay_payments_and_balance(self):
+        self.policy.billing_schedule = "Two-Pay"
+        pa = PolicyAccounting(self.policy.id)
+        invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
+                                .order_by(Invoice.bill_date).all()
+        for invoice in invoices:
+            self.assertEquals(pa.return_account_balance(date_cursor=invoice.bill_date), invoice.amount_due)
+            self.payments.append(pa.make_payment(contact_id=self.policy.named_insured,
+                                                 date_cursor=invoice.bill_date, amount=invoice.amount_due))
+            self.assertEquals(pa.return_account_balance(date_cursor=invoice.bill_date), 0)
 
     def test_quarterly_on_eff_date(self):
         self.policy.billing_schedule = "Quarterly"

@@ -152,7 +152,7 @@ class PolicyAccounting(object):
         for invoice in self.policy.invoices:
             invoice.delete()
 
-        billing_schedules = {'Annual': None, 'Semi-Annual': 3, 'Quarterly': 4, 'Monthly': 12}
+        billing_schedules = {'Annual': None, 'Two-Pay': 2, 'Quarterly': 4, 'Monthly': 12}
 
         invoices = []
         # Create the first invoice based on the effective date.
@@ -257,6 +257,12 @@ def insert_data():
     p3.named_insured = ryan_bucket.id
     p3.agent = john_doe_agent.id
     policies.append(p3)
+
+    p4 = Policy('Policy Four', date(2015, 2, 1), 500)
+    p4.billing_schedule = 'Two-Pay'
+    p4.named_insured = ryan_bucket.id
+    p4.agent = john_doe_agent.id
+    policies.append(p4)
 
     for policy in policies:
         db.session.add(policy)
