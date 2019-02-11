@@ -15,37 +15,76 @@ This is the base code for the engineer project.
 class PolicyAccounting(object):
     """
      Each policy has its own instance of accounting.
+
+     :param policy_id: The identifier of the policy whose data will be used.
+     :type  policy_id: int
+     :ivar  policy:    Local variable used to store the policy that is obtained from the database.
+     :vartype policy:  Policy object
     """
     def __init__(self, policy_id):
         self.policy = Policy.query.filter_by(id=policy_id).one()
 
         if not self.policy.invoices:
+            # The invoices are created at this point, according to the billing schedule, the annual premium
+            # is divided equally according to the number of payments
+            print "Creating invoices for Policy %d" % policy_id
             self.make_invoices()
 
     def return_account_balance(self, date_cursor=None):
+        """Calculate the pending balance in a policy.
+
+        This function calculates the balance of this policy according to the date provided and the number of
+        payments already performed.
+
+        :param date_cursor: Date used as basis for the balance calculation, if omitted, current date is used.
+        :type date_cursor: datetime.date object
+        :returns: int -- Amount due until the date specified
+        """
         if not date_cursor:
             date_cursor = datetime.now().date()
+            print "No date provided, today date will be used: " + str(date_cursor)
 
+        # Get the invoices from the database whose bill date is earlier or equal to the date provided.
         invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
                                 .filter(Invoice.bill_date <= date_cursor)\
                                 .order_by(Invoice.bill_date)\
                                 .all()
+        print "Number of due Invoices: %d" % len(invoices)
         due_now = 0
+        # Calculate the sum of all the invoices until the specified date
         for invoice in invoices:
             due_now += invoice.amount_due
 
+        # Get all the payments that were performed to this policy based on the date provided
         payments = Payment.query.filter_by(policy_id=self.policy.id)\
                                 .filter(Payment.transaction_date <= date_cursor)\
                                 .all()
+        print "Number if payments: %d" % len(payments)
+        # Subtract the payments already performed to this policy.
         for payment in payments:
             due_now -= payment.amount_paid
 
+        print "Total amount due: %d" % due_now
         return due_now
 
     def make_payment(self, contact_id=None, date_cursor=None, amount=0):
+        """Registers a payment to a policy
+
+        This function registers a payment in the specified date, if no date is specified
+        then the current date is used.
+        :param contact_id: Name of the insured. (default = None)
+        :type  contact_id: str
+        :param date_cursor: Date when the payment was registered. (default = None)
+        :type  date_cursor: datetime.date
+        :param amount: Amount of the payment to be registered. (default = 0)
+        :type  amount: int
+        :returns: Payment -- Payment class created with the provided data.
+        """
         if not date_cursor:
             date_cursor = datetime.now().date()
+            print "No date provided, today date will be used: " + str(date_cursor)
 
+        # If no name is provided for the insured, use the one stored in the policy
         if not contact_id:
             try:
                 contact_id = self.policy.named_insured
@@ -71,9 +110,16 @@ class PolicyAccounting(object):
         pass
 
     def evaluate_cancel(self, date_cursor=None):
+        """Evaluates if a policy should be canceled.
+
+        :param date_cursor: The date used to verify if this policy should be canceled. (default = None)
+        :type date_cursor: datetime.date
+        """
         if not date_cursor:
             date_cursor = datetime.now().date()
+            print "No date provided, today date will be used: " + str(date_cursor)
 
+        # Get the invoices that are ready to be canceled.
         invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
                                 .filter(Invoice.cancel_date <= date_cursor)\
                                 .order_by(Invoice.bill_date)\
@@ -90,12 +136,26 @@ class PolicyAccounting(object):
 
 
     def make_invoices(self):
+        """Create invoices for this policy.
+
+        This function creates invoices for this policy according to the billing schedule and the total annual
+        premium of the policy.
+
+        The total annual premium of the policy is divided equally between the different the periods created
+        according to the billing schedule.
+
+        The invoices are stored in the database and are related to the policy through the policy id.
+        """
+
+        # If there are pending invoices, they will be marked as "deleted" since we assume that the user
+        # made changes to the policy and rendered the previous invoices invalid.
         for invoice in self.policy.invoices:
             invoice.delete()
 
         billing_schedules = {'Annual': None, 'Semi-Annual': 3, 'Quarterly': 4, 'Monthly': 12}
 
         invoices = []
+        # Create the first invoice based on the effective date.
         first_invoice = Invoice(self.policy.id,
                                 self.policy.effective_date, #bill_date
                                 self.policy.effective_date + relativedelta(months=1), #due
@@ -104,10 +164,13 @@ class PolicyAccounting(object):
         invoices.append(first_invoice)
 
         if self.policy.billing_schedule == "Annual":
+            # Since only one invoice is needed for this billing schedule and was already created previously,
+            # nothing else is needed.
             pass
         elif self.policy.billing_schedule == "Two-Pay":
             first_invoice.amount_due = first_invoice.amount_due / billing_schedules.get(self.policy.billing_schedule)
             for i in range(1, billing_schedules.get(self.policy.billing_schedule)):
+                # In a Two-Pay schedule only one invoices is needed after 6 months of the initial invoice.
                 months_after_eff_date = i*6
                 bill_date = self.policy.effective_date + relativedelta(months=months_after_eff_date)
                 invoice = Invoice(self.policy.id,
@@ -119,6 +182,7 @@ class PolicyAccounting(object):
         elif self.policy.billing_schedule == "Quarterly":
             first_invoice.amount_due = first_invoice.amount_due / billing_schedules.get(self.policy.billing_schedule)
             for i in range(1, billing_schedules.get(self.policy.billing_schedule)):
+                # For the Quarterly schedule, an invoice is created for every three months period
                 months_after_eff_date = i*3
                 bill_date = self.policy.effective_date + relativedelta(months=months_after_eff_date)
                 invoice = Invoice(self.policy.id,
@@ -130,6 +194,7 @@ class PolicyAccounting(object):
         elif self.policy.billing_schedule == "Monthly":
             first_invoice.amount_due = first_invoice.amount_due / billing_schedules.get(self.policy.billing_schedule)
             for i in range(1, billing_schedules.get(self.policy.billing_schedule)):
+                # In a monthly schedule, twelve invoices should be created.
                 months_after_eff_date = i
                 bill_date = self.policy.effective_date + relativedelta(months=months_after_eff_date)
                 invoice = Invoice(self.policy.id,
