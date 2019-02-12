@@ -297,3 +297,18 @@ class TestGeneralOperations(unittest.TestCase):
         self.assertFalse(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 2, 1)))
         # Evaluate status after due date and before cancel date
         self.assertTrue(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 2, 2)))
+
+        # Need to test this with a different billing schedule to ensure that overlapping invoices
+        # are not causing errors.
+        policy.billing_schedule = "Monthly"
+        pa.make_invoices()
+        # Make a payment
+        self.payments.append(pa.make_payment(date_cursor=date(2015, 01, 01), amount=100))
+        # Evaluate status on eff date
+        self.assertFalse(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 1, 1)))
+        # Evaluate status on due date
+        self.assertFalse(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 2, 1)))
+        # Evaluate status after due date and before cancel date when a payment was made
+        self.assertFalse(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 2, 2)))
+        # Evaluate status after due date and before cancel date when no payment was made.
+        self.assertTrue(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 3, 2)))

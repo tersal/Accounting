@@ -123,22 +123,40 @@ class PolicyAccounting(object):
             print "No date provided, today date will be used: " + str(date_cursor)
 
         # Get all the invoices that are beyond the due date but still not passed their cancel date
+        invoice = Invoice.query.filter_by(policy_id=self.policy.id)\
+                               .filter(Invoice.due_date < date_cursor)\
+                               .filter(Invoice.cancel_date > date_cursor)\
+                               .filter(Invoice.deleted == False)\
+                               .order_by(Invoice.bill_date)\
+                               .all()
+        # If the date provided does not match any Invoice range, we assume that
+        # there are not pending canellations.
+        if len(invoice) is 0:
+            return False
+
+        # We need to get all the invoices that were billed with and before the
+        # one that is in the cancellation range to avoid accounting for an
+        # invoice that was just billed but still not passed the due date.
         invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
-                                .filter(Invoice.due_date < date_cursor)\
-                                .filter(Invoice.cancel_date > date_cursor)\
+                                .filter(Invoice.bill_date <= invoice[0].bill_date)\
                                 .filter(Invoice.deleted == False)\
                                 .order_by(Invoice.bill_date)\
                                 .all()
+        # In contrast we get all the payments until the date_cursor, this is to
+        # include the payments made after the bill date and before the due date
+        payments = Payment.query.filter_by(policy_id=self.policy.id)\
+                                .filter(Payment.transaction_date <= date_cursor)\
+                                .all()
 
-        for invoice in invoices:
-            if not self.return_account_balance(date_cursor):
-                continue
-            else:
-                # An invoice pending of cancellation was found
-                return True
-        else:
-            # No invoice with a pending balance after the due date and before cancel date was found.
-            return False
+        due_now = 0
+        for curr_invoice in invoices:
+            due_now += curr_invoice.amount_due
+
+        for payment in payments:
+            due_now -= payment.amount_paid
+
+        return due_now > 0
+
 
     def evaluate_cancel(self, date_cursor=None):
         """Evaluates if a policy should be canceled.
