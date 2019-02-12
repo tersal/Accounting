@@ -47,6 +47,7 @@ class PolicyAccounting(object):
         # Get the invoices from the database whose bill date is earlier or equal to the date provided.
         invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
                                 .filter(Invoice.bill_date <= date_cursor)\
+                                .filter(Invoice.deleted == False)\
                                 .order_by(Invoice.bill_date)\
                                 .all()
         print "Number of due Invoices: %d" % len(invoices)
@@ -125,6 +126,7 @@ class PolicyAccounting(object):
         invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
                                 .filter(Invoice.due_date < date_cursor)\
                                 .filter(Invoice.cancel_date > date_cursor)\
+                                .filter(Invoice.deleted == False)\
                                 .order_by(Invoice.bill_date)\
                                 .all()
 
@@ -151,6 +153,7 @@ class PolicyAccounting(object):
         # Get the invoices that are ready to be canceled.
         invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
                                 .filter(Invoice.cancel_date <= date_cursor)\
+                                .filter(Invoice.deleted == False)\
                                 .order_by(Invoice.bill_date)\
                                 .all()
 
@@ -173,17 +176,23 @@ class PolicyAccounting(object):
         The total annual premium of the policy is divided equally between the different the periods created
         according to the billing schedule.
 
+        If there are invoices already created for this policy, the old invoices will be marked as deleted
+        and not be accounted for any other operation on this policy, new invoices will be generated.
+
         The invoices are stored in the database and are related to the policy through the policy id.
         """
+
+        invoices = []
 
         # If there are pending invoices, they will be marked as "deleted" since we assume that the user
         # made changes to the policy and rendered the previous invoices invalid.
         for invoice in self.policy.invoices:
-            invoice.delete()
+            print "Deleting current invoices of this policy prior to the creation of new ones."
+            invoice.deleted = True
+            invoices.append(invoice)
 
         billing_schedules = {'Annual': None, 'Two-Pay': 2, 'Quarterly': 4, 'Monthly': 12}
 
-        invoices = []
         # Create the first invoice based on the effective date.
         first_invoice = Invoice(self.policy.id,
                                 self.policy.effective_date, #bill_date

@@ -196,6 +196,34 @@ class TestReturnAccountBalance(unittest.TestCase):
                                                  date_cursor=invoice.bill_date, amount=invoice.amount_due))
             self.assertEquals(pa.return_account_balance(date_cursor=invoice.bill_date), 0)
 
+    def test_policy_change_billing_schedule(self):
+        self.policy.billing_schedule = "Quarterly"
+        pa = PolicyAccounting(self.policy.id)
+
+        invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
+                                .order_by(Invoice.bill_date).all()
+        self.payments.append(pa.make_payment(contact_id=self.policy.named_insured,
+                                             date_cursor=invoices[0].bill_date, amount=300))
+
+        self.assertEquals(len(invoices), 4)
+        self.assertEquals(pa.return_account_balance(invoices[0].due_date), 0)
+        self.assertEquals(pa.return_account_balance(invoices[-1].due_date), 900)
+        # Evaluate that there are not deleted invoices in this policy yet
+        self.assertEquals(len([invoice for invoice in invoices if invoice.deleted]), 0)
+
+        # Create new invoices with a monthly schedule on the same policy
+        pa.policy.billing_schedule = 'Monthly'
+        pa.make_invoices()
+
+        invoices = Invoice.query.filter_by(policy_id=self.policy.id) \
+                                .order_by(Invoice.bill_date).all()
+        # The number of invoices should now be 16 (12 + 4)
+        self.assertEquals(len(invoices), 16)
+        # There should be 4 "deleted" invoices in the policy
+        self.assertEquals(len([invoice for invoice in invoices if invoice.deleted]), 4)
+        # The pending balance should still be 900 even when new invoices were created.
+        self.assertEquals(pa.return_account_balance(invoices[-1].due_date), 900)
+
 
 class TestGeneralOperations(unittest.TestCase):
 
