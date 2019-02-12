@@ -130,7 +130,7 @@ class PolicyAccounting(object):
                                .order_by(Invoice.bill_date)\
                                .all()
         # If the date provided does not match any Invoice range, we assume that
-        # there are not pending canellations.
+        # there are not pending cancellations.
         if len(invoice) is 0:
             return False
 
@@ -158,31 +158,64 @@ class PolicyAccounting(object):
         return due_now > 0
 
 
-    def evaluate_cancel(self, date_cursor=None):
+    def evaluate_cancel(self, date_cursor=None, cancellation_reason=None):
         """Evaluates if a policy should be canceled.
 
         :param date_cursor: The date used to verify if this policy should be canceled. (default = None)
-        :type date_cursor: datetime.date
+        :type  date_cursor: datetime.date
+        :param cancellation_reason: Used to define if this policy should be canceled for a reason
+                                    different than lack of payment
+        :type  cancellation_reason: str
         """
         if not date_cursor:
             date_cursor = datetime.now().date()
             print "No date provided, today date will be used: " + str(date_cursor)
 
-        # Get the invoices that are ready to be canceled.
-        invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
-                                .filter(Invoice.cancel_date <= date_cursor)\
-                                .filter(Invoice.deleted == False)\
-                                .order_by(Invoice.bill_date)\
-                                .all()
+        # Validate if the cancellation reason is other than lack of payment
+        if not cancellation_reason:
+            # Get the invoices that are ready to be canceled.
+            invoices = Invoice.query.filter_by(policy_id=self.policy.id)\
+                                    .filter(Invoice.cancel_date <= date_cursor)\
+                                    .filter(Invoice.deleted == False)\
+                                    .order_by(Invoice.bill_date)\
+                                    .all()
 
-        for invoice in invoices:
-            if not self.return_account_balance(invoice.cancel_date):
-                continue
-            else:
-                print "THIS POLICY SHOULD HAVE CANCELED"
-                break
+            if len(invoices) is 0:
+                # If no invoices are past the cancellation date, nothing else to do
+                return
+
+            due_now = 0
+            # We get the sum of all that is due of the invoices that passed the
+            # cancellation date.
+            for invoice in invoices:
+                due_now += invoice.amount_due
+
+            # We get all the payments until before the last invoice cancellation
+            # date
+            payments = Payment.query.filter_by(policy_id=self.policy.id)\
+                                    .filter(Payment.transaction_date < invoices[-1].cancel_date)\
+                                    .all()
+
+            for payment in payments:
+                due_now -= payment.amount_paid
+
+            # If some amount is still pending, then we can cancel the policy.
+            if due_now > 0:
+                print "This policy will be canceled due lack of payment"
+                self.policy.status = "Canceled"
+                self.policy.cancel_date = date_cursor
+                self.policy.cancel_reason = "Lack of payment"
+
         else:
-            print "THIS POLICY SHOULD NOT CANCEL"
+            # We assume that the cancel reason provided is valid
+            print "This policy will be canceled due: " + cancellation_reason
+            self.policy.status = "Canceled"
+            self.policy.cancel_date = date_cursor
+            self.policy.cancel_reason = cancellation_reason
+
+        if self.policy.status is "Canceled":
+            db.session.add(self.policy)
+            db.session.commit()
 
 
     def make_invoices(self):
