@@ -312,3 +312,50 @@ class TestGeneralOperations(unittest.TestCase):
         self.assertFalse(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 2, 2)))
         # Evaluate status after due date and before cancel date when no payment was made.
         self.assertTrue(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 3, 2)))
+
+    def test_evaluate_cancel(self):
+        policy = Policy('Test Policy', date(2015, 1, 1), 1200)
+        policy.named_insured = self.test_insured.id
+        policy.agent = self.test_agent.id
+        self.policies.append(policy)
+        db.session.add(policy)
+        db.session.commit()
+
+        # Get the policy from the database
+        policy.billing_schedule = "Monthly"
+        pa = PolicyAccounting(policy.id)
+        # Make a payment
+        self.payments.append(pa.make_payment(date_cursor=date(2015, 01, 01), amount=100))
+        # Evaluate status on eff date
+        pa.evaluate_cancel(date_cursor=date(2015, 1, 1))
+        self.assertEqual(pa.policy.status, 'Active')
+        self.assertEqual(pa.policy.cancel_date, None)
+        self.assertEqual(pa.policy.cancel_reason, None)
+        # Evaluate status in due date
+        pa.evaluate_cancel(date_cursor=date(2015, 2, 1))
+        self.assertEqual(pa.policy.status, 'Active')
+        self.assertEqual(pa.policy.cancel_date, None)
+        self.assertEqual(pa.policy.cancel_reason, None)
+        # Evaluate status between due date and cancellation date when payment was received for that invoice
+        self.assertFalse(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 2, 2)))
+        pa.evaluate_cancel(date_cursor=date(2015, 2, 1))
+        self.assertEqual(pa.policy.status, 'Active')
+        self.assertEqual(pa.policy.cancel_date, None)
+        self.assertEqual(pa.policy.cancel_reason, None)
+        # Evaluate status on due date of the non-payed invoice
+        self.assertFalse(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 3, 1)))
+        pa.evaluate_cancel(date_cursor=date(2015, 3, 1))
+        self.assertEqual(pa.policy.status, 'Active')
+        self.assertEqual(pa.policy.cancel_date, None)
+        self.assertEqual(pa.policy.cancel_reason, None)
+        # Evaluate status on cancellation period without payment
+        self.assertTrue(pa.evaluate_cancellation_pending_due_to_non_pay(date_cursor=date(2015, 3, 2)))
+        pa.evaluate_cancel(date_cursor=date(2015, 3, 2))
+        self.assertEqual(pa.policy.status, 'Active')
+        self.assertEqual(pa.policy.cancel_date, None)
+        self.assertEqual(pa.policy.cancel_reason, None)
+        # Evaluate cancel in cancellation date
+        pa.evaluate_cancel(date_cursor=date(2015, 3, 15))
+        self.assertEqual(pa.policy.status, 'Canceled')
+        self.assertEqual(pa.policy.cancel_date, date(2015, 3, 15))
+        self.assertEqual(pa.policy.cancel_reason, "Lack of payment")
