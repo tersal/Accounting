@@ -13,7 +13,7 @@
 <![endif]-->
 </head>
 <body>
-    <h1 class="display-3 text-center">Policy Navigator</h1>
+    <h1 class="display-3 text-center m-4">Policy Navigator</h1>
     <div class="container">
         <div class="row">
             <div class="col">
@@ -21,7 +21,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text">Policy ID</span>
                     </div>
-                    <input type="number" class="form-control">
+                    <input type="number" class="form-control" data-bind="value: policy_id">
                 </div>
             </div>
 
@@ -30,13 +30,38 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text">Date</span>
                     </div>
-                    <input type="date" class="form-control">
+                    <input type="date" class="form-control" data-bind="value: date">
                 </div>
             </div>
-        <div>
+        </div>
+        <div class="row justify-content-center">
+            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult">Request Policy</button>
+        </div>
+    </div>
+    <div class="container" data-bind="fadeVisible: invoices().length > 0">
+        <table class="table table-striped">
+            <thead>
+                <tr class="text-center">
+                    <th scope="col">Bill Date</th>
+                    <th scope="col">Due Date</th>
+                    <th scope="col">Cancel Date</th>
+                    <th scope="col">Amount</th>
+                </tr>
+            </thead>
+            <tbody data-bind="foreach: invoices">
+                <tr class="text-center">
+                    <td data-bind="text: bill_date"></td>
+                    <td data-bind="text: due_date"></td>
+                    <td data-bind="text: cancel_date"></td>
+                    <td data-bind="text: amount_due"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 class="display-4 text-center" data-bind="fadeVisible: amount_due() > 0">Amount Due: <strong>$<span data-bind="text: amount_due().toFixed(2)"></span></strong></h2>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.0/js/bootstrap.min.js" integrity="sha384-7aThvCh9TypR7fIc2HV4O/nFMVCBwyIUKL8XCtKE+8xgCgl/PQGuFsvShjr74PBp" crossorigin="anonymous"></script>
     <script src="{{url_for('static', filename='invoices_script.js')}}"></script>
