@@ -18,7 +18,7 @@ def index():
 
 # Process data
 @app.route("/consult_policy", methods=['POST'])
-def consult_data():
+def consult_policy():
     response = {}
     list_invoices = []
     data = request.json
@@ -51,4 +51,25 @@ def consult_data():
 
     return json.dumps(response)
 
+# Process data
+@app.route("/list_policies")
+def policy_list():
+    response = {}
+    list_policies = []
+    # Get invoices
+    policies = Policy.query.order_by(Policy.effective_date) \
+                      .all()
+
+    for policy in policies:
+        dict_invoice = {
+            'id': policy.id,
+            'policy_number': policy.policy_number,
+            'effective_date': policy.effective_date.strftime("%m/%d/%Y"),
+            'annual_premium': policy.annual_premium,
+        }
+        list_policies.append(dict_invoice)
+
+    response['policies'] = list_policies
+
+    return json.dumps(response)
 

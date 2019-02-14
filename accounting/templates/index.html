@@ -37,7 +37,28 @@
         </div>
         <div class="row justify-content-center">
             <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult">Request Policy</button>
+            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult_policies">List Policies</button>
         </div>
+    </div>
+    <div class="container" data-bind="fadeVisible: policies().length > 0">
+        <table class="table table-striped">
+            <thead>
+                <tr class="text-center">
+                    <th scope="col">ID</th>
+                    <th scope="col">Policy Number</th>
+                    <th scope="col">Effective Date</th>
+                    <th scope="col">Annual Premium</th>
+                </tr>
+            </thead>
+            <tbody data-bind="foreach: policies">
+                <tr class="text-center">
+                    <td data-bind="text: id"></td>
+                    <td data-bind="text: policy_number"></td>
+                    <td data-bind="text: effective_date"></td>
+                    <td data-bind="text: annual_premium"></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
     <div class="container" data-bind="fadeVisible: invoices().length > 0">
         <table class="table table-striped">

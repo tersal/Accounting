@@ -20,7 +20,9 @@ function PolicyViewModel() {
     self.policy_id = ko.observable().extend({ required: true, number: true });
     self.amount_due = ko.observable(0);
     self.invoices = ko.observableArray([]);
+    self.policies = ko.observableArray([]);
     self.errors = ko.validation.group(this);
+
     // Send current policy information to the server
     self.consult = function() {
         if(self.errors().length == 0) {
@@ -32,7 +34,8 @@ function PolicyViewModel() {
                 data: ko.toJSON({ date: self.date, policy_id: self.policy_id }),
             }).done(function(response) {
                 self.amount_due(response.total_balance);
-                self.invoices([])
+                self.invoices([]);
+                self.policies([]);
                 for(var i = 0; i < response.invoices.length; i++) {
                     invoice = {
                         bill_date: response.invoices[i].bill_date,
@@ -49,6 +52,30 @@ function PolicyViewModel() {
             alert("Please check the input values.");
         }
     };
+
+        // Send current policy information to the server
+    self.consult_policies = function() {
+            $.ajax({
+                url: "/list_policies",
+                type: 'GET',
+                dataType: 'json',
+            }).done(function(response) {
+                self.amount_due(0);
+                self.invoices([]);
+                self.policies([]);
+                for(var i = 0; i < response.policies.length; i++) {
+                    policy = {
+                        id: response.policies[i].id,
+                        effective_date: response.policies[i].effective_date,
+                        policy_number: response.policies[i].policy_number,
+                        annual_premium: response.policies[i].annual_premium,
+                    }
+                    self.policies.push(policy);
+                }
+            }).fail(function() {
+                alert("Request Failed");
+            });
+        }
 }
 
 // Activate knockout.js
