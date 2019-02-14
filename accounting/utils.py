@@ -22,7 +22,10 @@ class PolicyAccounting(object):
      :vartype policy:  Policy object
     """
     def __init__(self, policy_id):
-        self.policy = Policy.query.filter_by(id=policy_id).one()
+        try:
+            self.policy = Policy.query.filter_by(id=policy_id).one()
+        except:
+            raise ValueError("No Policy was found with that ID")
 
         if not self.policy.invoices:
             # The invoices are created at this point, according to the billing schedule, the annual premium

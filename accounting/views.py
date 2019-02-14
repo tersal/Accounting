@@ -1,7 +1,7 @@
 from datetime import date, datetime
 import json
 # You will probably need more methods from flask but this one is a good start.
-from flask import render_template, request
+from flask import render_template, request, abort
 
 # Import things from Flask that we need.
 from accounting import app, db
@@ -22,9 +22,12 @@ def consult_data():
     response = {}
     list_invoices = []
     data = request.json
-    curr_date = datetime.strptime(data['date'], "%Y-%m-%d")
-    policy_id = int(data['policy_id'])
-    pa = PolicyAccounting(policy_id)
+    try:
+        curr_date = datetime.strptime(data['date'], "%Y-%m-%d")
+        policy_id = int(data['policy_id'])
+        pa = PolicyAccounting(policy_id)
+    except:
+        abort(400)
 
     # Get current balance to date
     response["total_balance"] = pa.return_account_balance(date_cursor=curr_date)
