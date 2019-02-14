@@ -33,6 +33,11 @@ function PolicyViewModel() {
                 dataType: 'json',
                 data: ko.toJSON({ date: self.date, policy_id: self.policy_id }),
             }).done(function(response) {
+                if(!response.hasOwnProperty('total_balance') ||
+                   !response.hasOwnProperty('invoices')) {
+                   alert("Incorrect data received from server");
+                   return;
+                }
                 self.amount_due(response.total_balance);
                 self.invoices([]);
                 self.policies([]);
@@ -60,6 +65,10 @@ function PolicyViewModel() {
                 type: 'GET',
                 dataType: 'json',
             }).done(function(response) {
+                if(!response.hasOwnProperty('policies')) {
+                    alert("Incorrect data received from server.");
+                    return;
+                }
                 self.amount_due(0);
                 self.invoices([]);
                 self.policies([]);
