@@ -76,13 +76,19 @@ def policy_list():
                       .all()
 
     for policy in policies:
-        dict_invoice = {
+
+        insured = Contact.query.filter_by(id=policy.named_insured).one()
+        agent = Contact.query.filter_by(id=policy.agent).one()
+
+        dict_policy = {
             'id': policy.id,
             'policy_number': policy.policy_number,
             'effective_date': policy.effective_date.strftime("%m/%d/%Y"),
             'annual_premium': policy.annual_premium,
+            'insured_name': insured.name,
+            'agent_name': agent.name
         }
-        list_policies.append(dict_invoice)
+        list_policies.append(dict_policy)
 
     response['policies'] = list_policies
 

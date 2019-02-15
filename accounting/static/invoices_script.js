@@ -91,6 +91,8 @@ function PolicyViewModel() {
                         effective_date: response.policies[i].effective_date,
                         policy_number: response.policies[i].policy_number,
                         annual_premium: response.policies[i].annual_premium,
+                        insured_name: response.policies[i].insured_name,
+                        agent_name: response.policies[i].agent_name
                     }
                     self.policies.push(policy);
                 }
