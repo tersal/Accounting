@@ -21,6 +21,7 @@ function PolicyViewModel() {
     self.amount_due = ko.observable(0);
     self.invoices = ko.observableArray([]);
     self.policies = ko.observableArray([]);
+    self.payments = ko.observableArray([]);
     self.errors = ko.validation.group(this);
 
     // Send current policy information to the server
@@ -34,13 +35,16 @@ function PolicyViewModel() {
                 data: ko.toJSON({ date: self.date, policy_id: self.policy_id }),
             }).done(function(response) {
                 if(!response.hasOwnProperty('total_balance') ||
-                   !response.hasOwnProperty('invoices')) {
+                   !response.hasOwnProperty('invoices') ||
+                   !response.hasOwnProperty('payments')) {
                    alert("Incorrect data received from server");
                    return;
                 }
                 self.amount_due(response.total_balance);
                 self.invoices([]);
                 self.policies([]);
+                self.payments([]);
+                // Process invoices list
                 for(var i = 0; i < response.invoices.length; i++) {
                     invoice = {
                         bill_date: response.invoices[i].bill_date,
@@ -49,6 +53,14 @@ function PolicyViewModel() {
                         amount_due: response.invoices[i].amount_due,
                     }
                     self.invoices.push(invoice);
+                }
+                // Process payments list
+                for(var i = 0; i < response.payments.length; i++) {
+                    payment = {
+                        transaction_date: response.payments[i].transaction_date,
+                        amount_paid: response.payments[i].amount_paid
+                    }
+                    self.payments.push(payment);
                 }
             }).fail(function() {
                 alert("Request Failed: The input values are correct?");
@@ -72,6 +84,7 @@ function PolicyViewModel() {
                 self.amount_due(0);
                 self.invoices([]);
                 self.policies([]);
+                self.payments([]);
                 for(var i = 0; i < response.policies.length; i++) {
                     policy = {
                         id: response.policies[i].id,
@@ -91,4 +104,3 @@ function PolicyViewModel() {
 ko.applyBindings(new PolicyViewModel());
 
 });
-

@@ -61,6 +61,7 @@
         </table>
     </div>
     <div class="container" data-bind="fadeVisible: invoices().length > 0">
+        <h3 class="display-4 text-center">Policy Invoices</h3>
         <table class="table table-striped">
             <thead>
                 <tr class="text-center">
@@ -79,9 +80,27 @@
                 </tr>
             </tbody>
         </table>
-
-        <h2 class="display-4 text-center" data-bind="fadeVisible: amount_due() > 0">Amount Due: <strong>$<span data-bind="text: amount_due().toFixed(2)"></span></strong></h2>
     </div>
+
+    <div class="container" data-bind="fadeVisible: payments().length > 0">
+        <h3 class="display-4 text-center">Policy Payments</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr class="text-center">
+                    <th scope="col">Transaction Date</th>
+                    <th scope="col">Amount Paid</th>
+                </tr>
+            </thead>
+            <tbody data-bind="foreach: payments">
+                <tr class="text-center">
+                    <td data-bind="text: transaction_date"></td>
+                    <td data-bind="text: amount_paid"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <h2 class="display-4 text-center m-4" data-bind="fadeVisible: amount_due() > 0">Amount Due: <strong>$<span data-bind="text: amount_due().toFixed(2)"></span></strong></h2>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>

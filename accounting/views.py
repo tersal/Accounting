@@ -7,7 +7,7 @@ from flask import render_template, request, abort
 from accounting import app, db
 
 # Import our models
-from models import Contact, Invoice, Policy
+from models import Contact, Invoice, Policy, Payment
 from utils import PolicyAccounting
 
 # Routing for the server.
@@ -21,6 +21,7 @@ def index():
 def consult_policy():
     response = {}
     list_invoices = []
+    list_payments = []
     data = request.json
     try:
         curr_date = datetime.strptime(data['date'], "%Y-%m-%d")
@@ -49,6 +50,20 @@ def consult_policy():
 
     response['invoices'] = list_invoices
 
+    # Get payments
+    payments = Payment.query.filter_by(policy_id=policy_id)\
+                            .filter(Payment.transaction_date <= curr_date)\
+                            .all()
+    print len(payments)
+    for payment in payments:
+        dict_payment = {
+            'transaction_date': payment.transaction_date.strftime("%m/%d/%Y"),
+            'amount_paid': payment.amount_paid
+        }
+        list_payments.append(dict_payment)
+
+    response['payments'] = list_payments
+
     return json.dumps(response)
 
 # Process data
@@ -72,4 +87,3 @@ def policy_list():
     response['policies'] = list_policies
 
     return json.dumps(response)
-
