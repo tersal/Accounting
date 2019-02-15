@@ -85,6 +85,10 @@ class PolicyAccounting(object):
         :returns: Payment -- Payment class created with the provided data or None if it wasn't possible to make
                              the payment.
         """
+        if self.policy.status == "Canceled":
+            print "Payment denied since the policy is canceled"
+            return
+
         if not date_cursor:
             date_cursor = datetime.now().date()
             print "No date provided, today date will be used: " + str(date_cursor)
@@ -121,6 +125,10 @@ class PolicyAccounting(object):
          :returns: True  -- An invoice has passed the due date but still not in the cancel_date
                    False -- No invoice has passed the due date without payment.
         """
+        if self.policy.status == "Canceled":
+            print "Policy already canceled"
+            return
+
         if not date_cursor:
             date_cursor = datetime.now().date()
             print "No date provided, today date will be used: " + str(date_cursor)
@@ -170,6 +178,10 @@ class PolicyAccounting(object):
                                     different than lack of payment
         :type  cancellation_reason: str
         """
+        if self.policy.status == "Canceled":
+            print "Policy already canceled"
+            return
+
         if not date_cursor:
             date_cursor = datetime.now().date()
             print "No date provided, today date will be used: " + str(date_cursor)
@@ -216,7 +228,7 @@ class PolicyAccounting(object):
             self.policy.cancel_date = date_cursor
             self.policy.cancel_reason = cancellation_reason
 
-        if self.policy.status is "Canceled":
+        if self.policy.status == "Canceled":
             db.session.add(self.policy)
             db.session.commit()
 
@@ -235,6 +247,10 @@ class PolicyAccounting(object):
 
         The invoices are stored in the database and are related to the policy through the policy id.
         """
+
+        if self.policy.status == "Canceled":
+            print "Unable to create invoices since the policy is canceled"
+            return
 
         invoices = []
 
