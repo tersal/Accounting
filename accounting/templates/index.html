@@ -20,9 +20,10 @@
             <div class="col">
                 <div class="input-group input-group-lg">
                     <div class="input-group-prepend">
-                        <span class="input-group-text">Policy ID</span>
+                        <label class="input-group-text">Policy ID</label>
                     </div>
-                    <input type="number" class="form-control" data-bind="value: policy_id">
+                    <select class="custom-select" data-bind="options: $root.policies, value: policy_id, optionsText: 'policy_number'">
+                    </select>
                 </div>
             </div>
 
@@ -40,7 +41,7 @@
             <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult_policies">List Policies</button>
         </div>
     </div>
-    <div class="container" data-bind="fadeVisible: policies().length > 0">
+    <div class="container" data-bind="fadeVisible: invoices().length == 0">
         <table class="table table-striped">
             <thead>
                 <tr class="text-center">

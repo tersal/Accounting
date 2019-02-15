@@ -25,7 +25,7 @@ def consult_policy():
     data = request.json
     try:
         curr_date = datetime.strptime(data['date'], "%Y-%m-%d")
-        policy_id = int(data['policy_id'])
+        policy_id = int(data['policy_id']['id'])
         pa = PolicyAccounting(policy_id)
     except:
         abort(400)

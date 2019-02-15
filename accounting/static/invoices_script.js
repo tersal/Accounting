@@ -17,7 +17,7 @@ function PolicyViewModel() {
     // Data
     var self = this;
     self.date = ko.observable().extend({ required: true, date: true });
-    self.policy_id = ko.observable().extend({ required: true, number: true });
+    self.policy_id = ko.observable().extend({ required: true });
     self.amount_due = ko.observable(0);
     self.invoices = ko.observableArray([]);
     self.policies = ko.observableArray([]);
@@ -42,7 +42,6 @@ function PolicyViewModel() {
                 }
                 self.amount_due(response.total_balance);
                 self.invoices([]);
-                self.policies([]);
                 self.payments([]);
                 // Process invoices list
                 for(var i = 0; i < response.invoices.length; i++) {
@@ -99,7 +98,26 @@ function PolicyViewModel() {
             }).fail(function() {
                 alert("Request Failed");
             });
+    }
+
+    $.getJSON("/list_policies", function(response) {
+        if(!response.hasOwnProperty('policies')) {
+            return;
         }
+        for(var i = 0; i < response.policies.length; i++) {
+            policy = {
+                id: response.policies[i].id,
+                effective_date: response.policies[i].effective_date,
+                policy_number: response.policies[i].policy_number,
+                annual_premium: response.policies[i].annual_premium,
+                insured_name: response.policies[i].insured_name,
+                agent_name: response.policies[i].agent_name
+            }
+            self.policies.push(policy);
+        }
+    });
+
+
 }
 
 // Activate knockout.js
