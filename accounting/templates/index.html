@@ -15,6 +15,14 @@
 </head>
 <body>
     <h1 class="display-3 text-center m-4">Policy Navigator</h1>
+    <ul class="nav nav-pills justify-content-center m-3">
+        <li class="nav-item m-2 text-secondary">
+            <a class="nav-link active" href="#">Viewer</a>
+        </li>
+        <li class="nav-item m-2 text-secondary">
+            <a class="nav-link" href="#">Editor</a>
+        </li>
+    </ul>
     <div class="container">
         <div class="row">
             <div class="col">
@@ -104,7 +112,7 @@
             </tbody>
         </table>
     </div>
-    
+
     <h2 class="display-4 text-center m-4" data-bind="fadeVisible: amount_due() > 0">Amount Due: <strong>$<span data-bind="text: amount_due().toFixed(2)"></span></strong></h2>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
