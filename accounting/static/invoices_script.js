@@ -23,6 +23,58 @@ function PolicyViewModel() {
     self.policies = ko.observableArray([]);
     self.payments = ko.observableArray([]);
     self.errors = ko.validation.group(this);
+    // Visibility variables
+    self.visiblePolicies = ko.observable(true);
+    self.visibleNewPolicy = ko.observable(false);
+    self.visibleInvoices = ko.observable(false);
+    // New policy handling
+    self.existingInsured = ko.observable(false);
+    self.existingAgent = ko.observable(false);
+    self.agents = ko.observableArray([]);
+    self.insureds = ko.observableArray([]);
+    self.currentAgent = ko.observable();
+    self.currentInsured = ko.observable();
+
+    self.togglePolicies = function() {
+        self.consult_policies();
+        self.visiblePolicies(!self.visiblePolicies());
+        self.visibleInvoices(false);
+        self.visibleNewPolicy(false);
+    };
+
+    self.toggleInvoices = function() {
+        self.visibleInvoices(!self.visibleInvoices());
+        self.visiblePolicies(false);
+        self.visibleNewPolicy(false);
+    };
+
+    self.toggleNewPolicy = function() {
+        self.visibleNewPolicy(!self.visibleNewPolicy());
+        self.visibleInvoices(false);
+        self.visiblePolicies(false);
+        self.agents([]);
+        self.insureds([]);
+        $.getJSON("/users", function(response) {
+            if(!response.hasOwnProperty('agents') ||
+               !response.hasOwnProperty('users')) {
+                return;
+            }
+            for(var i = 0; i < response.agents.length; i++) {
+                agent = {
+                    id: response.agents[i].id,
+                    name: response.agents[i].name
+                }
+                self.agents.push(agent);
+            }
+            for(var i = 0; i < response.users.length; i++) {
+                user = {
+                    id: response.users[i].id,
+                    name: response.users[i].name
+                }
+                self.insureds.push(user);
+            }
+        });
+    };
 
     // Send current policy information to the server
     self.consult = function() {
@@ -80,10 +132,7 @@ function PolicyViewModel() {
                     alert("Incorrect data received from server.");
                     return;
                 }
-                self.amount_due(0);
-                self.invoices([]);
                 self.policies([]);
-                self.payments([]);
                 for(var i = 0; i < response.policies.length; i++) {
                     policy = {
                         id: response.policies[i].id,

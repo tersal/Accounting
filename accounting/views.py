@@ -71,7 +71,7 @@ def consult_policy():
 def policy_list():
     response = {}
     list_policies = []
-    # Get invoices
+    # Get policies
     policies = Policy.query.order_by(Policy.effective_date) \
                       .all()
 
@@ -91,5 +91,37 @@ def policy_list():
         list_policies.append(dict_policy)
 
     response['policies'] = list_policies
+
+    return json.dumps(response)
+
+# Process data
+@app.route("/users")
+def users_data():
+    response = {}
+    list_agents = []
+    list_users = []
+
+    # Get agents
+    agents = Contact.query.filter_by(role='Agent').all()
+
+    for agent in agents:
+        dict_agent = {
+            'id': agent.id,
+            'name': agent.name
+        }
+        list_agents.append(dict_agent)
+
+    # Get users
+    users = Contact.query.filter_by(role='Named Insured').all()
+
+    for user in users:
+        dict_user = {
+            'id': user.id,
+            'name': user.name
+        }
+        list_users.append(dict_user)
+
+    response['agents'] = list_agents
+    response['users'] = list_users
 
     return json.dumps(response)

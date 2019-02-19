@@ -15,15 +15,66 @@
 </head>
 <body>
     <h1 class="display-3 text-center m-4">Policy Navigator</h1>
-    <ul class="nav nav-pills justify-content-center m-3">
-        <li class="nav-item m-2 text-secondary">
-            <a class="nav-link active" href="#">Viewer</a>
-        </li>
-        <li class="nav-item m-2 text-secondary">
-            <a class="nav-link" href="#">Editor</a>
-        </li>
-    </ul>
-    <div class="container">
+
+    <div class="row justify-content-center">
+        <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: toggleNewPolicy">Create new Policy</button>
+        <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: toggleInvoices">Request Policy</button>
+        <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: togglePolicies">List Policies</button>
+    </div>
+
+    <!-- New policy menu handling -->
+    <div class="container-fluid" data-bind="fadeVisible: visibleNewPolicy()">
+        <div class="row">
+            <div class="col">
+                <div class="input-group input-group-lg">
+                    <div class="input-group-prepend">
+                        <label class="input-group-text">Policy Name</label>
+                    </div>
+                    <input type="text" class="form-control">
+                </div>
+            </div>
+            <div class="col">
+                <div class="input-group input-group-lg">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Date</span>
+                    </div>
+                    <input type="date" class="form-control">
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" data-bind="checked: existingInsured" id="ex-insured">
+                    <label class="form-check-label" for="ex-insured">Existing Insured</label>
+                </div>
+                <div class="input-group input-group-lg">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Insured</span>
+                    </div>
+                    <input type="text" data-bind="visible: !existingInsured()" class="form-control">
+                    <select class="custom-select" data-bind="visible: existingInsured, options: $root.insureds, value: currentAgent, optionsText: 'name'"></select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" data-bind="checked: existingAgent" id="ex-agent">
+                    <label class="form-check-label" for="ex-agent">Existing Agent</label>
+                </div>
+                <div class="input-group input-group-lg">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Agent</span>
+                    </div>
+                    <input type="text" data-bind="visible: !existingAgent()" class="form-control">
+                    <select class="custom-select" data-bind="visible: existingAgent, options: $root.agents, value: currentInsured, optionsText: 'name'"></select>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult">Create</button>
+        </div>
+    </div>
+
+    <!-- Invoices and payments display -->
+    <div class="container" data-bind="fadeVisible: visibleInvoices()">
         <div class="row">
             <div class="col">
                 <div class="input-group input-group-lg">
@@ -34,7 +85,6 @@
                     </select>
                 </div>
             </div>
-
             <div class="col">
                 <div class="input-group input-group-lg">
                     <div class="input-group-prepend">
@@ -45,11 +95,51 @@
             </div>
         </div>
         <div class="row justify-content-center">
-            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult">Request Policy</button>
-            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult_policies">List Policies</button>
+            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult">Request</button>
         </div>
     </div>
-    <div class="container" data-bind="fadeVisible: invoices().length == 0">
+    <div class="container" data-bind="fadeVisible: invoices().length > 0 && visibleInvoices()">
+        <h3 class="display-4 text-center">Policy Invoices</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr class="text-center">
+                    <th scope="col">Bill Date</th>
+                    <th scope="col">Due Date</th>
+                    <th scope="col">Cancel Date</th>
+                    <th scope="col">Amount</th>
+                </tr>
+            </thead>
+            <tbody data-bind="foreach: invoices">
+                <tr class="text-center">
+                    <td data-bind="text: bill_date"></td>
+                    <td data-bind="text: due_date"></td>
+                    <td data-bind="text: cancel_date"></td>
+                    <td data-bind="text: amount_due"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div data-bind="fadeVisible: payments().length > 0">
+            <h3 class="display-4 text-center">Policy Payments</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr class="text-center">
+                        <th scope="col">Transaction Date</th>
+                        <th scope="col">Amount Paid</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: payments">
+                    <tr class="text-center">
+                        <td data-bind="text: transaction_date"></td>
+                        <td data-bind="text: amount_paid"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <h2 class="display-4 text-center m-4" data-bind="fadeVisible: amount_due() > 0">Amount Due: <strong>$<span data-bind="text: amount_due().toFixed(2)"></span></strong></h2>
+    </div>
+
+    <!-- Policies diaplay handling -->
+    <div class="container" data-bind="fadeVisible: policies().length > 0 && visiblePolicies()">
         <table class="table table-striped">
             <thead>
                 <tr class="text-center">
@@ -73,47 +163,6 @@
             </tbody>
         </table>
     </div>
-    <div class="container" data-bind="fadeVisible: invoices().length > 0">
-        <h3 class="display-4 text-center">Policy Invoices</h3>
-        <table class="table table-striped">
-            <thead>
-                <tr class="text-center">
-                    <th scope="col">Bill Date</th>
-                    <th scope="col">Due Date</th>
-                    <th scope="col">Cancel Date</th>
-                    <th scope="col">Amount</th>
-                </tr>
-            </thead>
-            <tbody data-bind="foreach: invoices">
-                <tr class="text-center">
-                    <td data-bind="text: bill_date"></td>
-                    <td data-bind="text: due_date"></td>
-                    <td data-bind="text: cancel_date"></td>
-                    <td data-bind="text: amount_due"></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="container" data-bind="fadeVisible: payments().length > 0">
-        <h3 class="display-4 text-center">Policy Payments</h3>
-        <table class="table table-striped">
-            <thead>
-                <tr class="text-center">
-                    <th scope="col">Transaction Date</th>
-                    <th scope="col">Amount Paid</th>
-                </tr>
-            </thead>
-            <tbody data-bind="foreach: payments">
-                <tr class="text-center">
-                    <td data-bind="text: transaction_date"></td>
-                    <td data-bind="text: amount_paid"></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <h2 class="display-4 text-center m-4" data-bind="fadeVisible: amount_due() > 0">Amount Due: <strong>$<span data-bind="text: amount_due().toFixed(2)"></span></strong></h2>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
