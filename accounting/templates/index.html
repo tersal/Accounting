@@ -24,13 +24,13 @@
 
     <!-- New policy menu handling -->
     <div class="container-fluid" data-bind="fadeVisible: visibleNewPolicy()">
-        <div class="row">
+        <div class="row m-2">
             <div class="col">
                 <div class="input-group input-group-lg">
                     <div class="input-group-prepend">
                         <label class="input-group-text">Policy Name</label>
                     </div>
-                    <input type="text" class="form-control">
+                    <input type="text" class="form-control" data-bind="value: newPolicyName">
                 </div>
             </div>
             <div class="col">
@@ -38,7 +38,7 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text">Date</span>
                     </div>
-                    <input type="date" class="form-control">
+                    <input type="date" class="form-control" data-bind="value: newPolicyDate">
                 </div>
             </div>
             <div class="col">
@@ -50,8 +50,12 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text">Insured</span>
                     </div>
-                    <input type="text" data-bind="visible: !existingInsured()" class="form-control">
-                    <select class="custom-select" data-bind="visible: existingInsured, options: $root.insureds, value: currentAgent, optionsText: 'name'"></select>
+                    <!-- ko if: !existingInsured() -->
+                    <input type="text" class="form-control" data-bind="value: newPolicyInsured" />
+                    <!-- /ko -->
+                    <!-- ko if: existingInsured -->
+                    <select class="custom-select" data-bind="options: $root.insureds, value: newPolicyInsured, optionsText: 'name'"></select>
+                    <!-- /ko -->
                 </div>
             </div>
             <div class="col">
@@ -63,13 +67,35 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text">Agent</span>
                     </div>
-                    <input type="text" data-bind="visible: !existingAgent()" class="form-control">
-                    <select class="custom-select" data-bind="visible: existingAgent, options: $root.agents, value: currentInsured, optionsText: 'name'"></select>
+                    <!-- ko if: !existingAgent() -->
+                    <input data-bind="value: newPolicyAgent" class="form-control">
+                    <!-- /ko -->
+                    <!-- ko if: existingAgent -->
+                    <select class="custom-select" data-bind="options: $root.agents, value: newPolicyAgent, optionsText: 'name'"></select>
+                    <!-- /ko -->
                 </div>
             </div>
         </div>
-        <div class="row justify-content-center">
-            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult">Create</button>
+        <div class="row m-2">
+            <div class="col">
+                <div class="input-group input-group-lg">
+                    <div class="input-group-prepend">
+                        <label class="input-group-text">Annual Premium</label>
+                    </div>
+                    <input type="number" class="form-control" data-bind="value: newPolicyPremium">
+                </div>
+            </div>
+            <div class="col">
+                <div class="input-group input-group-lg">
+                    <div class="input-group-prepend">
+                        <label class="input-group-text">Billing Schedule</label>
+                    </div>
+                    <select class="custom-select" data-bind="options: $root.billingSchedules, value: newPolicyBilling"></select>
+                </div>
+            </div>
+        </div>
+        <div class="row justify-content-center m-2">
+            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: create_policy">Create</button>
         </div>
     </div>
 

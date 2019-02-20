@@ -32,8 +32,19 @@ function PolicyViewModel() {
     self.existingAgent = ko.observable(false);
     self.agents = ko.observableArray([]);
     self.insureds = ko.observableArray([]);
-    self.currentAgent = ko.observable();
-    self.currentInsured = ko.observable();
+    self.newPolicyAgent = ko.observable();
+    self.newPolicyInsured = ko.observable();
+    self.newPolicyDate = ko.observable();
+    self.newPolicyName = ko.observable();
+    self.newPolicyPremium = ko.observable();
+    self.newPolicyBilling = ko.observable();
+
+    self.billingSchedules = [
+        "Annual",
+        'Quarterly',
+        "Two-Pay",
+        "Monthly"
+    ];
 
     self.togglePolicies = function() {
         self.consult_policies();
@@ -75,6 +86,18 @@ function PolicyViewModel() {
             }
         });
     };
+
+    self.existingAgent.subscribe(function(value) {
+        if(value) {
+            self.newPolicyAgent = ko.observable();
+        }
+    }, this, "beforeChange");
+
+    self.existingInsured.subscribe(function(value) {
+        if(value) {
+            self.newPolicyInsured = ko.observable();
+        }
+    }, this, "beforeChange");
 
     // Send current policy information to the server
     self.consult = function() {
@@ -147,7 +170,33 @@ function PolicyViewModel() {
             }).fail(function() {
                 alert("Request Failed");
             });
-    }
+    };
+
+    // Create a new policy with the provided data
+    self.create_policy = function() {
+        $.ajax({
+                url: "/create_policy",
+                type: 'POST',
+                contentType: 'application/json',
+                data: ko.toJSON({ date: self.newPolicyDate, policy_name: self.newPolicyName,
+                                  existingInsured : self.existingInsured, existingAgent: self.existingAgent,
+                                  insured: self.newPolicyInsured, agent: self.newPolicyAgent,
+                                  premium: self.newPolicyPremium, schedule: self.newPolicyBilling}),
+            }).done(function(response) {
+                self.existingInsured(false);
+                self.existingAgent(false);
+                self.newPolicyAgent("");
+                self.newPolicyInsured("");
+                self.newPolicyDate("");
+                self.newPolicyName("");
+                self.newPolicyPremium("");
+                self.newPolicyBilling("Annual");
+                alert("Policy Created");
+            }).fail(function() {
+
+            });
+
+    };
 
     $.getJSON("/list_policies", function(response) {
         if(!response.hasOwnProperty('policies')) {

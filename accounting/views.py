@@ -125,3 +125,44 @@ def users_data():
     response['users'] = list_users
 
     return json.dumps(response)
+
+# Create new policy
+@app.route("/create_policy", methods=['POST'])
+def create_policy():
+    data = request.json
+    try:
+        curr_date = datetime.strptime(data['date'], "%Y-%m-%d")
+        policy_name = data['policy_name']
+        existing_insured = data['existingInsured']
+        existing_agent = data['existingAgent']
+        insured = data['insured']
+        agent = data['agent']
+        billing_schedule = data['schedule']
+        premium = int(data['premium'])
+    except:
+        abort(400)
+
+    if not existing_insured:
+        new_insured = Contact(insured, 'Named Insured')
+        db.session.add(new_insured)
+        db.session.commit()
+        insured = new_insured.id
+    else:
+        insured = insured['id']
+
+    if not existing_agent:
+        new_agent = Contact(agent, 'Agent')
+        db.session.add(new_agent)
+        db.session.commit()
+        agent = new_agent.id
+    else:
+        agent = agent['id']
+
+    new_policy = Policy(policy_name, curr_date, premium)
+    new_policy.billing_schedule = billing_schedule
+    new_policy.named_insured = insured
+    new_policy.agent = agent
+    db.session.add(new_policy)
+    db.session.commit()
+
+    return "All good"
