@@ -23,6 +23,7 @@ function PolicyViewModel() {
     self.policies = ko.observableArray([]);
     self.payments = ko.observableArray([]);
     self.errors = ko.validation.group(this);
+    self.payment_amount = ko.observable();
     // Visibility variables
     self.visiblePolicies = ko.observable(true);
     self.visibleNewPolicy = ko.observable(false);
@@ -143,6 +144,20 @@ function PolicyViewModel() {
             alert("Please check the input values.");
         }
     };
+
+    self.make_payment = function() {
+        $.ajax({
+            url: "/make_payment",
+            type: 'POST',
+            contentType: 'application/json',
+            data : ko.toJSON({ date: self.date, payment_amount: self.payment_amount, policy_id : self.policy_id}),
+        }).done(function(response) {
+            alert("Success");
+            self.consult()
+        }).fail(function() {
+            alert('Failure')
+        });
+    }
 
         // Send current policy information to the server
     self.consult_policies = function() {

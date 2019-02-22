@@ -144,6 +144,15 @@
                 </tr>
             </tbody>
         </table>
+        <div class="container m-2" data-bind="fadeVisible: visibleInvoices()">
+            <div class="input-group input-group-lg">
+                <div class="input-group-prepend">
+                    <label class="input-group-text">Amount</label>
+                </div>
+                <input type="number" class="form-control" data-bind="value: payment_amount">
+                <button type="button" class="btn btn-secondary btn-lg" data-bind="click: make_payment">Pay</button>
+            </div>
+        </div>
         <div data-bind="fadeVisible: payments().length > 0">
             <h3 class="display-4 text-center">Policy Payments</h3>
             <table class="table table-striped">

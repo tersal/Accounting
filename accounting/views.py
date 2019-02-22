@@ -166,3 +166,20 @@ def create_policy():
     db.session.commit()
 
     return "All good"
+
+# Make a payment
+@app.route("/make_payment", methods=['POST'])
+def make_payment():
+    data = request.json
+    try:
+        curr_date = datetime.strptime(data['date'], "%Y-%m-%d")
+        amount = int(data['payment_amount'])
+        policy_id = int(data['policy_id']['id'])
+        pa = PolicyAccounting(policy_id)
+    except:
+        abort(400)
+
+    pa.make_payment(date_cursor=curr_date, amount=amount)
+
+    return "All Good"
+
