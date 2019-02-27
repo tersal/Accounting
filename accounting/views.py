@@ -16,7 +16,7 @@ def index():
     # You will need to serve something up here.
     return render_template('index.html')
 
-# Process data
+# Returns the invoices and payments for the specified policy
 @app.route("/consult_policy", methods=['POST'])
 def consult_policy():
     response = {}
@@ -64,9 +64,12 @@ def consult_policy():
 
     response['payments'] = list_payments
 
+    # Add policy status
+    response['policy_status'] = pa.policy.status;
+
     return json.dumps(response)
 
-# Process data
+# Get a list of the existing policies
 @app.route("/list_policies")
 def policy_list():
     response = {}
@@ -94,7 +97,7 @@ def policy_list():
 
     return json.dumps(response)
 
-# Process data
+# Get the names of the Contacts (insureds and agents)
 @app.route("/users")
 def users_data():
     response = {}

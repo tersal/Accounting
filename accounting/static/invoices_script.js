@@ -19,6 +19,7 @@ function PolicyViewModel() {
     self.date = ko.observable().extend({ required: true, date: true });
     self.policy_id = ko.observable().extend({ required: true });
     self.amount_due = ko.observable(0);
+    self.policy_status = ko.observable();
     self.invoices = ko.observableArray([]);
     self.policies = ko.observableArray([]);
     self.payments = ko.observableArray([]);
@@ -112,7 +113,8 @@ function PolicyViewModel() {
             }).done(function(response) {
                 if(!response.hasOwnProperty('total_balance') ||
                    !response.hasOwnProperty('invoices') ||
-                   !response.hasOwnProperty('payments')) {
+                   !response.hasOwnProperty('payments') ||
+                   !response.hasOwnProperty('policy_status')) {
                    alert("Incorrect data received from server");
                    return;
                 }
@@ -137,6 +139,7 @@ function PolicyViewModel() {
                     }
                     self.payments.push(payment);
                 }
+                self.policy_status(response.policy_status);
             }).fail(function() {
                 alert("Request Failed: The input values are correct?");
             });
