@@ -1,3 +1,77 @@
+function Policy() {
+    var self = this;
+    self.date = ko.observable().extend({ required: true, date: true });
+    self.policy_id = ko.observable().extend({ required: true });
+    self.amount_due = ko.observable(0);
+    self.policy_status = ko.observable();
+    self.invoices = ko.observableArray([]);
+    self.payments = ko.observableArray([]);
+    self.errors = ko.validation.group(this);
+    self.payment_amount = ko.observable();
+
+    // Send current policy information to the server
+    self.consult = function() {
+        if(self.errors().length == 0) {
+            $.ajax({
+                url: "/consult_policy",
+                type: 'POST',
+                contentType: 'application/json',
+                dataType: 'json',
+                data: ko.toJSON({ date: self.date, policy_id: self.policy_id }),
+            }).done(function(response) {
+                if(!response.hasOwnProperty('total_balance') ||
+                   !response.hasOwnProperty('invoices') ||
+                   !response.hasOwnProperty('payments') ||
+                   !response.hasOwnProperty('policy_status')) {
+                   alert("Incorrect data received from server");
+                   return;
+                }
+                self.amount_due(response.total_balance);
+                self.invoices([]);
+                self.payments([]);
+                // Process invoices list
+                for(var i = 0; i < response.invoices.length; i++) {
+                    invoice = {
+                        bill_date: response.invoices[i].bill_date,
+                        due_date: response.invoices[i].due_date,
+                        cancel_date: response.invoices[i].cancel_date,
+                        amount_due: response.invoices[i].amount_due,
+                    }
+                    self.invoices.push(invoice);
+                }
+                // Process payments list
+                for(var i = 0; i < response.payments.length; i++) {
+                    payment = {
+                        transaction_date: response.payments[i].transaction_date,
+                        amount_paid: response.payments[i].amount_paid
+                    }
+                    self.payments.push(payment);
+                }
+                self.policy_status(response.policy_status);
+            }).fail(function() {
+                alert("Request Failed: The input values are correct?");
+            });
+        } else {
+            alert("Please check the input values.");
+        }
+    };
+
+    // Make a payment to this policy.
+    self.make_payment = function() {
+        $.ajax({
+            url: "/make_payment",
+            type: 'POST',
+            contentType: 'application/json',
+            data : ko.toJSON({ date: self.date, payment_amount: self.payment_amount, policy_id : self.policy_id}),
+        }).done(function(response) {
+            alert("Success");
+            self.consult()
+        }).fail(function() {
+            alert('Failure')
+        });
+    }
+}
+
 $(document).ready(function() {
 
 ko.bindingHandlers.fadeVisible = {
@@ -16,15 +90,10 @@ ko.bindingHandlers.fadeVisible = {
 function PolicyViewModel() {
     // Data
     var self = this;
-    self.date = ko.observable().extend({ required: true, date: true });
-    self.policy_id = ko.observable().extend({ required: true });
-    self.amount_due = ko.observable(0);
-    self.policy_status = ko.observable();
-    self.invoices = ko.observableArray([]);
+    // Current policy object.
+    self.current_policy = new Policy();
+
     self.policies = ko.observableArray([]);
-    self.payments = ko.observableArray([]);
-    self.errors = ko.validation.group(this);
-    self.payment_amount = ko.observable();
     // Visibility variables
     self.visiblePolicies = ko.observable(true);
     self.visibleNewPolicy = ko.observable(false);
@@ -101,68 +170,7 @@ function PolicyViewModel() {
         }
     }, this, "beforeChange");
 
-    // Send current policy information to the server
-    self.consult = function() {
-        if(self.errors().length == 0) {
-            $.ajax({
-                url: "/consult_policy",
-                type: 'POST',
-                contentType: 'application/json',
-                dataType: 'json',
-                data: ko.toJSON({ date: self.date, policy_id: self.policy_id }),
-            }).done(function(response) {
-                if(!response.hasOwnProperty('total_balance') ||
-                   !response.hasOwnProperty('invoices') ||
-                   !response.hasOwnProperty('payments') ||
-                   !response.hasOwnProperty('policy_status')) {
-                   alert("Incorrect data received from server");
-                   return;
-                }
-                self.amount_due(response.total_balance);
-                self.invoices([]);
-                self.payments([]);
-                // Process invoices list
-                for(var i = 0; i < response.invoices.length; i++) {
-                    invoice = {
-                        bill_date: response.invoices[i].bill_date,
-                        due_date: response.invoices[i].due_date,
-                        cancel_date: response.invoices[i].cancel_date,
-                        amount_due: response.invoices[i].amount_due,
-                    }
-                    self.invoices.push(invoice);
-                }
-                // Process payments list
-                for(var i = 0; i < response.payments.length; i++) {
-                    payment = {
-                        transaction_date: response.payments[i].transaction_date,
-                        amount_paid: response.payments[i].amount_paid
-                    }
-                    self.payments.push(payment);
-                }
-                self.policy_status(response.policy_status);
-            }).fail(function() {
-                alert("Request Failed: The input values are correct?");
-            });
-        } else {
-            alert("Please check the input values.");
-        }
-    };
-
-    self.make_payment = function() {
-        $.ajax({
-            url: "/make_payment",
-            type: 'POST',
-            contentType: 'application/json',
-            data : ko.toJSON({ date: self.date, payment_amount: self.payment_amount, policy_id : self.policy_id}),
-        }).done(function(response) {
-            alert("Success");
-            self.consult()
-        }).fail(function() {
-            alert('Failure')
-        });
-    }
-
-        // Send current policy information to the server
+    // Request policies list from the server
     self.consult_policies = function() {
             $.ajax({
                 url: "/list_policies",
@@ -232,8 +240,6 @@ function PolicyViewModel() {
             self.policies.push(policy);
         }
     });
-
-
 }
 
 // Activate knockout.js

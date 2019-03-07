@@ -107,7 +107,7 @@
                     <div class="input-group-prepend">
                         <label class="input-group-text">Policy ID</label>
                     </div>
-                    <select class="custom-select" data-bind="options: $root.policies, value: policy_id, optionsText: 'policy_number'">
+                    <select class="custom-select" data-bind="options: $root.policies, value: current_policy.policy_id, optionsText: 'policy_number'">
                     </select>
                 </div>
             </div>
@@ -116,16 +116,16 @@
                     <div class="input-group-prepend">
                         <span class="input-group-text">Date</span>
                     </div>
-                    <input type="date" class="form-control" data-bind="value: date">
+                    <input type="date" class="form-control" data-bind="value: current_policy.date">
                 </div>
             </div>
         </div>
         <div class="row justify-content-center">
-            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: consult">Request</button>
+            <button type="button" class="btn btn-secondary btn-lg m-3" data-bind="click: current_policy.consult">Request</button>
         </div>
     </div>
-    <div class="container" data-bind="fadeVisible: invoices().length > 0 && visibleInvoices()">
-        <h3 class="display-4 text-center border border-dark p-2 m-3">Policy Status: <strong data-bind="text: policy_status"></strong></h3>
+    <div class="container" data-bind="fadeVisible: current_policy.invoices().length > 0 && visibleInvoices()">
+        <h3 class="display-4 text-center border border-dark p-2 m-3">Policy Status: <strong data-bind="text: current_policy.policy_status"></strong></h3>
         <h3 class="display-4 text-center">Policy Invoices</h3>
         <table class="table table-striped">
             <thead>
@@ -136,7 +136,7 @@
                     <th scope="col">Amount</th>
                 </tr>
             </thead>
-            <tbody data-bind="foreach: invoices">
+            <tbody data-bind="foreach: current_policy.invoices">
                 <tr class="text-center">
                     <td data-bind="text: bill_date"></td>
                     <td data-bind="text: due_date"></td>
@@ -150,11 +150,11 @@
                 <div class="input-group-prepend">
                     <label class="input-group-text">Amount</label>
                 </div>
-                <input type="number" class="form-control" data-bind="value: payment_amount">
-                <button type="button" class="btn btn-secondary btn-lg" data-bind="click: make_payment">Pay</button>
+                <input type="number" class="form-control" data-bind="value: current_policy.payment_amount">
+                <button type="button" class="btn btn-secondary btn-lg" data-bind="click: current_policy.make_payment">Pay</button>
             </div>
         </div>
-        <div data-bind="fadeVisible: payments().length > 0">
+        <div data-bind="fadeVisible: current_policy.payments().length > 0">
             <h3 class="display-4 text-center">Policy Payments</h3>
             <table class="table table-striped">
                 <thead>
@@ -163,7 +163,7 @@
                         <th scope="col">Amount Paid</th>
                     </tr>
                 </thead>
-                <tbody data-bind="foreach: payments">
+                <tbody data-bind="foreach: current_policy.payments">
                     <tr class="text-center">
                         <td data-bind="text: transaction_date"></td>
                         <td data-bind="text: amount_paid"></td>
@@ -171,7 +171,7 @@
                 </tbody>
             </table>
         </div>
-        <h2 class="display-4 text-center m-4" data-bind="fadeVisible: amount_due() > 0">Amount Due: <strong>$<span data-bind="text: amount_due().toFixed(2)"></span></strong></h2>
+        <h2 class="display-4 text-center m-4" data-bind="fadeVisible: current_policy. amount_due() > 0">Amount Due: <strong>$<span data-bind="text: current_policy.amount_due().toFixed(2)"></span></strong></h2>
     </div>
 
     <!-- Policies diaplay handling -->
